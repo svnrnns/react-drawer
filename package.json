@@ -1,0 +1,61 @@
+{
+  "name": "@svnrnns/react-drawer",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Imperative drawer for React",
+  "type": "module",
+  "main": "./dist/drawer.cjs",
+  "module": "./dist/drawer.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/drawer.js",
+      "require": "./dist/drawer.cjs"
+    },
+    "./styles.css": "./dist/style.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "scripts": {
+    "prepublishOnly": "npm run clean && npm run build",
+    "clean": "rm -rf dist",
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0",
+    "vite-plugin-dts": "^4.0.0"
+  },
+  "keywords": [
+    "react",
+    "drawer",
+    "next.js"
+  ],
+  "author": "seven rings (https://twitter.com/svnrnns)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/svnrnns/react-drawer.git"
+  },
+  "homepage": "https://github.com/svnrnns/react-drawer",
+  "bugs": {
+    "url": "https://github.com/svnrnns/react-drawer/issues"
+  },
+  "license": "ISC"
+}
