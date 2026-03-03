@@ -10,7 +10,7 @@ import { createCloseDrawer } from "../api.js";
 import { useFocusTrap } from "../useFocusTrap.js";
 import { updatePhase } from "../store.js";
 
-const ANIMATION_DURATION = 200;
+const ANIMATION_DURATION = 500; /* .5s - matches --drawer-duration */
 
 interface DrawerFrameProps {
   item: DrawerItem;
@@ -55,20 +55,32 @@ export function DrawerFrame({ item }: DrawerFrameProps) {
     closeDrawer,
   } as typeof item.props & { closeDrawer: () => void };
 
+  const position = item.position;
   const widthStyle =
-    item.width != null && (item.position === "left" || item.position === "right")
+    item.width != null && (position === "left" || position === "right")
       ? {
           width:
-            typeof item.width === "number"
-              ? `${item.width}px`
-              : item.width,
+            typeof item.width === "number" ? `${item.width}px` : item.width,
         }
+      : undefined;
+  const heightStyle =
+    item.height != null && (position === "top" || position === "bottom")
+      ? {
+          height:
+            typeof item.height === "number"
+              ? `${item.height}px`
+              : item.height,
+        }
+      : undefined;
+  const frameStyle =
+    widthStyle ?? heightStyle
+      ? { ...widthStyle, ...heightStyle }
       : undefined;
 
   return createElement(
     "div",
     {
-      className: "drawers-layer",
+      className: "drawer-layer",
       "data-position": item.position,
       onClick: handleBackdropClick,
       role: "presentation",
@@ -83,23 +95,23 @@ export function DrawerFrame({ item }: DrawerFrameProps) {
         "aria-labelledby":
           item.title != null ? `drawer-title-${item.id}` : undefined,
         "data-position": item.position,
-        className: `drawers-frame ${
-          item.phase === "exiting" ? "drawers-frame-exit" : ""
-        } ${item.title != null ? "drawers-frame-has-title" : ""} ${
-          item.footer ? "drawers-frame-has-footer" : ""
+        className: `drawer-frame ${
+          item.phase === "exiting" ? "drawer-frame-exit" : ""
+        } ${item.title != null ? "drawer-frame-has-title" : ""} ${
+          item.footer ? "drawer-frame-has-footer" : ""
         } ${item.className ?? ""}`.trim(),
-        style: widthStyle,
+        style: frameStyle,
         onClick: (e: MouseEvent<HTMLDivElement>) => e.stopPropagation(),
       },
       createElement(
         "div",
-        { className: "drawers-body" },
+        { className: "drawer-body" },
         createElement(
           "button",
           {
             type: "button",
             "aria-label": "Close",
-            className: "drawers-close",
+            className: "drawer-close",
             onClick: closeDrawer,
           },
           createElement(
@@ -123,16 +135,16 @@ export function DrawerFrame({ item }: DrawerFrameProps) {
         item.title != null &&
           createElement(
             "div",
-            { className: "drawers-header" },
+            { className: "drawer-header" },
             createElement(
               "h2",
-              { className: "drawers-title", id: `drawer-title-${item.id}` },
+              { className: "drawer-title", id: `drawer-title-${item.id}` },
               item.title
             )
           ),
         createElement(
           "div",
-          { className: "drawers-content" },
+          { className: "drawer-content" },
           createElement(Content, mergedProps)
         )
       ),
@@ -140,7 +152,7 @@ export function DrawerFrame({ item }: DrawerFrameProps) {
         createElement(
           "div",
           {
-            className: `drawers-footer ${item.footer.className ?? ""}`.trim(),
+            className: `drawer-footer ${item.footer.className ?? ""}`.trim(),
           },
           createElement(item.footer.component, {
             ...(typeof item.footer.props === "object" &&

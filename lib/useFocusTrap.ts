@@ -3,7 +3,7 @@ import { useEffect, type RefObject } from "react";
 const FOCUSABLE_SELECTOR =
   'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
-const CLOSE_BUTTON_CLASS = "drawers-close";
+const CLOSE_BUTTON_CLASS = "drawer-close";
 
 function getFocusableElements(container: HTMLElement): HTMLElement[] {
   return Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR));

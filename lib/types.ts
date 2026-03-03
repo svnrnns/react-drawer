@@ -43,8 +43,10 @@ export interface DrawerItem<P = unknown> {
   component: ComponentType<P & { closeDrawer: () => void }>;
   /** Props for the component */
   props: P;
-  /** Drawer width (for left/right) or height (for top/bottom). Capped at 90% viewport. */
+  /** Drawer width (for left/right only). Capped at 90vw. */
   width?: string | number;
+  /** Drawer height (for top/bottom only). Ignored for left/right. */
+  height?: string | number;
   /** Edge from which the drawer slides */
   position: DrawerPosition;
   /** Optional class name for the drawer wrapper */
@@ -79,8 +81,10 @@ export interface OpenDrawerOptions<T = object, F = object> {
   component: ComponentType<DrawerComponentProps<T>>;
   /** Props passed to the component. Type is inferred from the component. */
   props?: T;
-  /** Optional drawer width (e.g. `"400px"` or 400). For left/right drawers. Max 90vw. */
+  /** Optional drawer width (e.g. `"400px"` or 400). For left/right drawers only. Max 90vw. */
   width?: string | number;
+  /** Optional drawer height (e.g. `"300px"` or 300). For top/bottom drawers only. Max 90vh. Ignored for left/right. */
+  height?: string | number;
   /** Optional class name for the drawer wrapper */
   className?: string;
   /** Optional title shown in the header */

@@ -1,7 +1,7 @@
 import type { OpenDrawerOptions, DrawerItem } from "./types.js";
 import { getDrawer, setDrawer, clearDrawer, updatePhase } from "./store.js";
 
-const ANIMATION_DURATION = 200;
+const ANIMATION_DURATION = 500; /* .5s - matches --drawer-duration */
 const ANIMATION_BUFFER = 50;
 
 function generateId(): string {
@@ -27,6 +27,7 @@ export function openDrawer<T = object, F = object>(
     component: options.component as DrawerItem["component"],
     props: (options.props ?? {}) as object,
     width: options.width,
+    height: options.height,
     position: options.position ?? "right",
     className: options.className,
     title: options.title,

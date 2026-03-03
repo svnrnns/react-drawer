@@ -76,7 +76,8 @@ TypeScript infers `props` from your component, so `props: { name: "World" }` is 
 - **component** – React component to render (receives `props` + `closeDrawer`).
 - **props** – Props for the component (inferred from `component`).
 - **title** – Optional title in the drawer header.
-- **width** – Optional width for left/right drawers (e.g. `"400px"`, `400`). Omit for content-based width.
+- **width** – Optional width for left/right drawers (e.g. `"400px"`, `400`). Omit for content-based width. Ignored for top/bottom.
+- **height** – Optional height for top/bottom drawers (e.g. `"300px"`, `300`). Ignored for left/right (they use full viewport height).
 - **position** – Edge from which the drawer slides: `"top"`, `"bottom"`, `"left"`, `"right"`. Defaults to `"right"`.
 - **className** – Optional class for the drawer wrapper.
 - **footer** – Optional `{ component, props?, className? }` for a footer component. The footer receives its props plus **closeDrawer** (same as the content).

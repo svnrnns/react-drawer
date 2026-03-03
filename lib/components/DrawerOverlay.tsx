@@ -11,7 +11,7 @@ export function DrawerOverlay({
 }: DrawerOverlayProps) {
   return createElement("div", {
     "aria-hidden": true,
-    className: `drawers-overlay ${exiting ? "drawers-overlay-exit" : ""}`.trim(),
+    className: `drawer-overlay ${exiting ? "drawer-overlay-exit" : ""}`.trim(),
     onClick: onBackdropClick,
   });
 }
