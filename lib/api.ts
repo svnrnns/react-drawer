@@ -35,6 +35,7 @@ export function openDrawer<T = object, F = object>(
     onClose: options.onClose,
     disableClickOutside: options.disableClickOutside ?? false,
     disableEsc: options.disableEsc ?? false,
+    disableOverlay: options.disableOverlay ?? false,
     phase: "entering",
   };
   setDrawer(item);

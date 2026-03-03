@@ -61,6 +61,8 @@ export interface DrawerItem<P = unknown> {
   disableClickOutside?: boolean;
   /** If true, Escape key does not close the drawer */
   disableEsc?: boolean;
+  /** If true, overlay is not rendered; clicking outside won't close, background is interactable */
+  disableOverlay?: boolean;
   /** Current animation phase */
   phase: DrawerPhase;
 }
@@ -97,6 +99,8 @@ export interface OpenDrawerOptions<T = object, F = object> {
   disableClickOutside?: boolean;
   /** If true, Escape key does not close the drawer */
   disableEsc?: boolean;
+  /** If true, overlay is not rendered; clicking outside won't close, background is interactable */
+  disableOverlay?: boolean;
   /** Edge from which the drawer slides. Defaults to "right". */
   position?: DrawerPosition;
 }
