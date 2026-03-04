@@ -1,7 +1,8 @@
 import { useState, useEffect, createElement, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { getDrawer, subscribe } from "../store.js";
+import { getDrawer, subscribe, getGestureClosingId } from "../store.js";
 import { createCloseDrawer } from "../api.js";
+import { useViewportGestureKey } from "../useViewportGestureKey.js";
 import { DrawerOverlay } from "./DrawerOverlay.js";
 import { DrawerFrame } from "./DrawerFrame.js";
 import "../styles/drawer.css";
@@ -9,6 +10,8 @@ import "../styles/drawer.css";
 interface DrawerRootProps {
   /** If true, all drawers render without overlay; clicking outside won't close, background is interactable */
   disableOverlay?: boolean;
+  /** If true, disables rubber band fill for all drawers (no gap filler when rubber band dragging) */
+  disableRubberBandFill?: boolean;
 }
 
 /**
@@ -18,7 +21,9 @@ interface DrawerRootProps {
  */
 export function DrawerRoot(props?: DrawerRootProps) {
   const disableOverlayRoot = props?.disableOverlay === true;
+  const disableRubberBandFillRoot = props?.disableRubberBandFill === true;
   const [drawer, setDrawer] = useState(getDrawer);
+  const viewportGestureKey = useViewportGestureKey();
 
   useEffect(() => {
     return subscribe(() => setDrawer(getDrawer()));
@@ -35,7 +40,11 @@ export function DrawerRoot(props?: DrawerRootProps) {
     drawer.disableOverlay === true || disableOverlayRoot;
   const onBackdropClick =
     !hideOverlay && !drawer.disableClickOutside && !exiting
-      ? closeDrawer
+      ? () => {
+          /* Check at click time - avoids race when gesture close starts before re-render */
+          if (getGestureClosingId() === drawer.id) return;
+          closeDrawer();
+        }
       : undefined;
 
   const portalChildren = [
@@ -45,7 +54,11 @@ export function DrawerRoot(props?: DrawerRootProps) {
         exiting,
         onBackdropClick,
       }),
-    createElement(DrawerFrame, { key: drawer.id, item: drawer }),
+    createElement(DrawerFrame, {
+      key: `${drawer.id}-${viewportGestureKey}`,
+      item: drawer,
+      disableRubberBandFill: disableRubberBandFillRoot,
+    }),
   ].filter(Boolean);
 
   return createPortal(portalChildren, document.body);

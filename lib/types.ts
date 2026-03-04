@@ -63,6 +63,12 @@ export interface DrawerItem<P = unknown> {
   disableEsc?: boolean;
   /** If true, overlay is not rendered; clicking outside won't close, background is interactable */
   disableOverlay?: boolean;
+  /** If true, drag gesture to close is disabled */
+  disableGestureClose?: boolean;
+  /** If true, shows the drag handler bar (default true for position bottom, false otherwise) */
+  showHandler?: boolean;
+  /** If true, fills the gap when rubber band dragging (default true). Use false to show transparent gap. */
+  rubberBandFill?: boolean;
   /** Current animation phase */
   phase: DrawerPhase;
 }
@@ -101,6 +107,12 @@ export interface OpenDrawerOptions<T = object, F = object> {
   disableEsc?: boolean;
   /** If true, overlay is not rendered; clicking outside won't close, background is interactable */
   disableOverlay?: boolean;
+  /** If true, drag gesture to close is disabled */
+  disableGestureClose?: boolean;
+  /** If true, shows the drag handler bar (default true for position bottom, false otherwise) */
+  showHandler?: boolean;
+  /** If true, fills the gap when rubber band dragging (default true). Use false to show transparent gap. */
+  rubberBandFill?: boolean;
   /** Edge from which the drawer slides. Defaults to "right". */
   position?: DrawerPosition;
 }

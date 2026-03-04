@@ -1,10 +1,21 @@
 import type { DrawerItem, Listener } from "./types.js";
 
 let current: DrawerItem | null = null;
+let gestureClosingId: string | null = null;
 const listeners = new Set<Listener>();
 
 function notify() {
   listeners.forEach((fn) => fn());
+}
+
+/** ID of drawer currently closing via gesture - backdrop/click close should be ignored */
+export function setGestureClosingId(id: string | null): void {
+  gestureClosingId = id;
+  notify();
+}
+
+export function getGestureClosingId(): string | null {
+  return gestureClosingId;
 }
 
 /** Returns the current drawer or null. */
@@ -26,6 +37,7 @@ export function setDrawer(item: DrawerItem): void {
 /** Removes the current drawer after exit animation. Triggers unmount. */
 export function clearDrawer(): void {
   current = null;
+  gestureClosingId = null;
   notify();
 }
 

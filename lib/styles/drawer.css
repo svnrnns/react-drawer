@@ -22,6 +22,11 @@
   --drawer-close-hover-color: #0f172a;
   --drawer-max-height: min(95vh, 95dvh);
   --drawer-footer-padding: var(--drawer-padding);
+  --drawer-handler-bg: #cbd5e1;
+  --drawer-handler-width: 40px;
+  --drawer-handler-height: 4px;
+  --drawer-handler-border-radius: 2px;
+  --drawer-handler-touch-area: 16px;
 }
 
 /* Overlay */
@@ -59,13 +64,15 @@
   }
 }
 
-/* Drawer layer - full viewport, positions the panel by edge */
+/* Drawer layer - full viewport, positions the panel by edge. Isolation ensures drawer+filler are above overlay. */
 .drawer-layer {
   position: fixed;
   inset: 0;
   z-index: 9999;
   display: flex;
   pointer-events: none;
+  isolation: isolate;
+  user-select: none;
 }
 
 .drawer-layer[data-position="right"] {
@@ -88,13 +95,84 @@
   align-items: flex-end;
 }
 
-.drawer-layer > * {
+.drawer-layer>* {
   pointer-events: auto;
+}
+
+/* Transform wrapper: holds frame + rubber band filler, receives gesture transform */
+.drawer-transform-wrapper {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.drawer-transform-wrapper[data-position="right"] {
+  flex-direction: row;
+  height: 100%;
+}
+
+.drawer-transform-wrapper[data-position="left"] {
+  flex-direction: row-reverse;
+  height: 100%;
+}
+
+.drawer-transform-wrapper[data-position="top"] {
+  flex-direction: column-reverse;
+  width: 100%;
+}
+
+.drawer-transform-wrapper[data-position="bottom"] {
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Rubber band filler: ::after extends from drawer edge in direction of gap (Vaul-style) */
+.drawer-frame.drawer-frame-rubberband-fill {
+  overflow: visible;
+  /* Allow ::after to extend beyond frame */
+}
+
+.drawer-frame.drawer-frame-rubberband-fill::after {
+  content: "";
+  position: absolute;
+  background: inherit;
+  background-color: inherit;
+  pointer-events: none;
+  z-index: 0;
+  /* Same stacking as drawer, behind frame content */
+}
+
+.drawer-frame.drawer-frame-rubberband-fill[data-position="right"]::after {
+  left: 100%;
+  top: 0;
+  bottom: 0;
+  width: var(--drawer-rubberband-size, 0);
+}
+
+.drawer-frame.drawer-frame-rubberband-fill[data-position="left"]::after {
+  right: 100%;
+  top: 0;
+  bottom: 0;
+  width: var(--drawer-rubberband-size, 0);
+}
+
+.drawer-frame.drawer-frame-rubberband-fill[data-position="bottom"]::after {
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: var(--drawer-rubberband-size, 0);
+}
+
+.drawer-frame.drawer-frame-rubberband-fill[data-position="top"]::after {
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  height: var(--drawer-rubberband-size, 0);
 }
 
 /* Drawer panel */
 .drawer-frame {
   position: relative;
+  z-index: 1;
   background: var(--drawer-bg);
   border: var(--drawer-border);
   border-radius: var(--drawer-border-radius);
@@ -108,6 +186,15 @@
 .drawer-frame[data-position="right"],
 .drawer-frame[data-position="left"] {
   height: 100%;
+}
+
+/* No handler: claim touch so gesture gets events in real time; content keeps vertical scroll. */
+.drawer-frame[data-no-handler] {
+  touch-action: none;
+}
+
+.drawer-frame[data-no-handler] .drawer-content {
+  touch-action: pan-y;
 }
 
 .drawer-frame[data-position="top"],
@@ -244,10 +331,7 @@
   justify-content: space-between;
   gap: var(--drawer-gap);
   padding: var(--drawer-padding);
-  padding-right: calc(
-    var(--drawer-padding) * 0.6 + var(--drawer-close-size) +
-      var(--drawer-close-padding) * 2
-  );
+  padding-right: calc(var(--drawer-padding) * 0.6 + var(--drawer-close-size) + var(--drawer-close-padding) * 2);
   padding-bottom: 0;
 }
 
@@ -306,4 +390,78 @@
 
 .drawer-footer {
   padding: var(--drawer-footer-padding);
+}
+
+/* Frame with vertical handler (left/right): row layout */
+.drawer-frame.drawer-frame-handler-vertical {
+  flex-direction: row;
+}
+
+.drawer-frame.drawer-frame-handler-vertical .drawer-body-wrapper {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--drawer-gap);
+}
+
+/* Handler (drag bar) - horizontal for position bottom/top */
+.drawer-handler-area {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: var(--drawer-handler-touch-area);
+  padding-bottom: 0.5rem;
+  flex-shrink: 0;
+  cursor: grab;
+  touch-action: none;
+}
+
+.drawer-handler-area[data-position="top"] {
+  padding-top: 0.5rem;
+  padding-bottom: var(--drawer-handler-touch-area);
+}
+
+.drawer-handler-area:active {
+  cursor: grabbing;
+}
+
+.drawer-handler {
+  width: var(--drawer-handler-width);
+  height: var(--drawer-handler-height);
+  border-radius: var(--drawer-handler-border-radius);
+  background: var(--drawer-handler-bg);
+}
+
+/* Handler vertical for position left/right */
+.drawer-handler-area[data-position="left"],
+.drawer-handler-area[data-position="right"] {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  align-self: stretch;
+  min-width: calc(var(--drawer-handler-touch-area) + 0.5rem * 2);
+  justify-content: center;
+}
+
+.drawer-handler-area[data-position="left"] .drawer-handler,
+.drawer-handler-area[data-position="right"] .drawer-handler {
+  width: var(--drawer-handler-height);
+  height: var(--drawer-handler-width);
+}
+
+/* Disable enter animation once drawer has fully entered - prevents re-trigger on snap-back */
+.drawer-frame.drawer-frame-entered {
+  animation: none;
+}
+
+.drawer-frame.drawer-frame-dragging,
+.drawer-frame.drawer-frame-gesture-active {
+  animation: none;
+}
+
+.drawer-frame.drawer-frame-dragging {
+  transition: none;
 }

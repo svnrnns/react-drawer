@@ -21,6 +21,7 @@ function generateId(): string {
 export function openDrawer<T = object, F = object>(
   options: OpenDrawerOptions<T, F>
 ): string {
+  const position = options.position ?? "right";
   const id = generateId();
   const item: DrawerItem = {
     id,
@@ -28,7 +29,7 @@ export function openDrawer<T = object, F = object>(
     props: (options.props ?? {}) as object,
     width: options.width,
     height: options.height,
-    position: options.position ?? "right",
+    position,
     className: options.className,
     title: options.title,
     footer: options.footer as DrawerItem["footer"],
@@ -36,22 +37,38 @@ export function openDrawer<T = object, F = object>(
     disableClickOutside: options.disableClickOutside ?? false,
     disableEsc: options.disableEsc ?? false,
     disableOverlay: options.disableOverlay ?? false,
+    disableGestureClose: options.disableGestureClose ?? false,
+    showHandler:
+      options.showHandler ??
+      (position === "bottom" ? true : false),
+    rubberBandFill: options.rubberBandFill ?? true,
     phase: "entering",
   };
   setDrawer(item);
   return id;
 }
 
+export interface CloseDrawerOptions {
+  /** If true, skips the exit animation and clears immediately (used when gesture has already animated) */
+  skipExitAnimation?: boolean;
+}
+
 /**
  * Closes the drawer. If no id is passed, closes the current drawer.
  * @param id - Drawer id (returned by {@link openDrawer}). Optional when only one drawer exists.
+ * @param options - Optional: skipExitAnimation to clear without playing exit animation
  */
-export function closeDrawer(id?: string): void {
+export function closeDrawer(id?: string, options?: CloseDrawerOptions): void {
   const drawer = getDrawer();
   if (!drawer) return;
   if (id != null && drawer.id !== id) return;
 
   const onCloseCallback = drawer.onClose;
+  if (options?.skipExitAnimation) {
+    clearDrawer();
+    onCloseCallback?.();
+    return;
+  }
   updatePhase(drawer.id, "exiting");
   setTimeout(() => {
     const currentNow = getDrawer();
@@ -63,6 +80,6 @@ export function closeDrawer(id?: string): void {
 }
 
 /** Create a closeDrawer callback bound to a drawer id (used internally by DrawerFrame) */
-export function createCloseDrawer(id: string): () => void {
-  return () => closeDrawer(id);
+export function createCloseDrawer(id: string): (options?: CloseDrawerOptions) => void {
+  return (options) => closeDrawer(id, options);
 }

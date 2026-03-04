@@ -84,6 +84,12 @@ TypeScript infers `props` from your component, so `props: { name: "World" }` is 
 - **onClose** – Callback when the drawer is closed.
 - **disableClickOutside** – If `true`, clicking the overlay does not close.
 - **disableEsc** – If `true`, Escape does not close.
+- **disableGestureClose** – If `true`, drag-to-close gesture is disabled.
+- **showHandler** – If `true`, shows the drag handler bar. Default: `true` for `position: "bottom"`, `false` otherwise.
+
+### Gesture handling
+
+Drawers support drag-to-close gestures (mouse and touch). Drag in the direction the drawer was opened from to close it. A **fast swipe** closes the drawer; a **slow drag** closes only if released near the edge. Bottom drawers include a gray handler bar at the top by default.
 
 ### API
 
@@ -100,29 +106,34 @@ When a drawer is open, focus is trapped inside it: Tab / Shift+Tab wrap within t
 
 Override these in your app to style the drawer:
 
-| Variable                       | Default                               | Description                             |
-| ------------------------------ | ------------------------------------- | --------------------------------------- |
-| `--drawer-bg`                  | `#fff`                                | Drawer panel background                 |
-| `--drawer-border`              | `1px solid transparent`               | Drawer panel border                     |
-| `--drawer-padding`             | `1rem`                                | Padding for header and content          |
-| `--drawer-footer-padding`      | `var(--drawer-padding)`               | Padding for the footer                  |
-| `--drawer-gap`                 | `1rem`                                | Gap between header, content, footer     |
-| `--drawer-title-color`         | `#0f172a`                             | Title text color                        |
-| `--drawer-title-font-size`     | `1rem`                                | Title font size                         |
-| `--drawer-title-line-height`   | `1`                                   | Title line height                       |
-| `--drawer-border-radius`       | `0`                                   | Drawer corners (shadcn style: straight) |
-| `--drawer-shadow`              | `0 25px 50px -12px rgb(0 0 0 / 0.25)` | Box shadow                              |
-| `--drawer-overlay-bg`          | `rgba(0, 0, 0, 0.3)`                  | Backdrop color                          |
-| `--drawer-overlay-blur-filter` | `blur(8px)`                           | Backdrop blur (full filter value)       |
-| `--drawer-duration`            | `200ms`                               | Animation duration                      |
-| `--drawer-max-height`          | `min(95vh, 95dvh)`                    | Maximum height for top/bottom drawers   |
-| `--drawer-close-size`          | `1.75rem`                             | Close button width and height           |
-| `--drawer-close-padding`       | `0.25rem`                             | Close button padding                    |
-| `--drawer-close-border-radius` | `0.5rem`                              | Close button border radius              |
-| `--drawer-close-bg`            | `transparent`                         | Close button background                 |
-| `--drawer-close-hover-bg`      | `rgba(0, 0, 0, 0.05)`                 | Close button hover background           |
-| `--drawer-close-color`         | `#3e4658`                             | Close icon color                        |
-| `--drawer-close-hover-color`   | `#0f172a`                             | Close icon hover color                  |
+| Variable                         | Default                               | Description                             |
+| -------------------------------- | ------------------------------------- | --------------------------------------- |
+| `--drawer-bg`                    | `#fff`                                | Drawer panel background                 |
+| `--drawer-border`                | `1px solid transparent`               | Drawer panel border                     |
+| `--drawer-padding`               | `1rem`                                | Padding for header and content          |
+| `--drawer-footer-padding`        | `var(--drawer-padding)`               | Padding for the footer                  |
+| `--drawer-gap`                   | `1rem`                                | Gap between header, content, footer     |
+| `--drawer-title-color`           | `#0f172a`                             | Title text color                        |
+| `--drawer-title-font-size`       | `1rem`                                | Title font size                         |
+| `--drawer-title-line-height`     | `1`                                   | Title line height                       |
+| `--drawer-border-radius`         | `0`                                   | Drawer corners (shadcn style: straight) |
+| `--drawer-shadow`                | `0 25px 50px -12px rgb(0 0 0 / 0.25)` | Box shadow                              |
+| `--drawer-overlay-bg`            | `rgba(0, 0, 0, 0.3)`                  | Backdrop color                          |
+| `--drawer-overlay-blur-filter`   | `blur(8px)`                           | Backdrop blur (full filter value)       |
+| `--drawer-duration`              | `200ms`                               | Animation duration                      |
+| `--drawer-max-height`            | `min(95vh, 95dvh)`                    | Maximum height for top/bottom drawers   |
+| `--drawer-close-size`            | `1.75rem`                             | Close button width and height           |
+| `--drawer-close-padding`         | `0.25rem`                             | Close button padding                    |
+| `--drawer-close-border-radius`   | `0.5rem`                              | Close button border radius              |
+| `--drawer-close-bg`              | `transparent`                         | Close button background                 |
+| `--drawer-close-hover-bg`        | `rgba(0, 0, 0, 0.05)`                 | Close button hover background           |
+| `--drawer-close-color`           | `#3e4658`                             | Close icon color                        |
+| `--drawer-close-hover-color`     | `#0f172a`                             | Close icon hover color                  |
+| `--drawer-handler-bg`            | `#cbd5e1`                             | Drag handler bar color                  |
+| `--drawer-handler-width`         | `40px`                                | Handler bar width                       |
+| `--drawer-handler-height`        | `4px`                                 | Handler bar height                      |
+| `--drawer-handler-border-radius` | `2px`                                 | Handler bar border radius               |
+| `--drawer-handler-touch-area`    | `16px`                                | Touch padding above handler             |
 
 Example:
 
