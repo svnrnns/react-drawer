@@ -14,6 +14,41 @@ export type DrawerPhase = "entering" | "entered" | "exiting";
 export type DrawerPosition = "top" | "bottom" | "left" | "right";
 
 /**
+ * Axis of the swipe gesture.
+ */
+export type DrawerSwipeAxis = "x" | "y";
+
+/**
+ * Event object passed to onSwipeStart.
+ */
+export interface DrawerSwipeStartEvent {
+  /** Edge from which the drawer slides */
+  position: DrawerPosition;
+  /** Axis of the swipe gesture (x for left/right, y for top/bottom) */
+  axis: DrawerSwipeAxis;
+}
+
+/**
+ * Event object passed to onSwipe (during the gesture).
+ */
+export interface DrawerSwipeEvent extends DrawerSwipeStartEvent {
+  /** Progress toward closed: 0 = fully open, 1 = fully closed */
+  progress: number;
+  /** Current drag offset in pixels (positive = toward close direction) */
+  dragOffset: number;
+  /** Current velocity in close direction (px/ms) */
+  velocity: number;
+}
+
+/**
+ * Event object passed to onSwipeEnd.
+ */
+export interface DrawerSwipeEndEvent extends DrawerSwipeEvent {
+  /** True if the drawer will close; false if it will snap back */
+  willClose: boolean;
+}
+
+/**
  * Props passed to the footer component. Includes all custom props plus the injected `closeDrawer` function.
  * @template T - Custom props type of the footer component
  */
@@ -57,6 +92,12 @@ export interface DrawerItem<P = unknown> {
   footer?: DrawerFooterOptions<unknown>;
   /** Callback when the drawer is closed */
   onClose?: () => void;
+  /** Callback when the swipe gesture starts */
+  onSwipeStart?: (event: DrawerSwipeStartEvent) => void;
+  /** Callback during the swipe gesture (called on each move) */
+  onSwipe?: (event: DrawerSwipeEvent) => void;
+  /** Callback when the swipe gesture ends */
+  onSwipeEnd?: (event: DrawerSwipeEndEvent) => void;
   /** If true, clicking the overlay does not close the drawer */
   disableClickOutside?: boolean;
   /** If true, Escape key does not close the drawer */
@@ -103,6 +144,12 @@ export interface OpenDrawerOptions<T = object, F = object> {
   footer?: DrawerFooterOptions<F>;
   /** Callback when the drawer is closed */
   onClose?: () => void;
+  /** Callback when the swipe gesture starts */
+  onSwipeStart?: (event: DrawerSwipeStartEvent) => void;
+  /** Callback during the swipe gesture (called on each move) */
+  onSwipe?: (event: DrawerSwipeEvent) => void;
+  /** Callback when the swipe gesture ends */
+  onSwipeEnd?: (event: DrawerSwipeEndEvent) => void;
   /** If true, clicking the overlay does not close the drawer */
   disableClickOutside?: boolean;
   /** If true, Escape key does not close the drawer */

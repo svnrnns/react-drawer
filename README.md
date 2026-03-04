@@ -86,6 +86,9 @@ TypeScript infers `props` from your component, so `props: { name: "World" }` is 
 - **className** – Optional class for the drawer wrapper.
 - **footer** – Optional `{ component, props?, className? }` for a footer component. The footer receives its props plus **closeDrawer** (same as the content).
 - **onClose** – Callback when the drawer is closed.
+- **onSwipeStart** – Callback when the swipe gesture starts. Receives `{ position, axis }`.
+- **onSwipe** – Callback during the swipe (called on each move). Receives `{ position, axis, progress, dragOffset, velocity }`.
+- **onSwipeEnd** – Callback when the swipe ends. Receives `{ position, axis, progress, dragOffset, velocity, willClose }`.
 - **disableClickOutside** – If `true`, clicking the overlay does not close.
 - **disableEsc** – If `true`, Escape does not close.
 - **disableOverlay** – If `true`, overlay is not rendered; clicking outside won't close, background is interactable.
@@ -97,6 +100,21 @@ TypeScript infers `props` from your component, so `props: { name: "World" }` is 
 ### Gesture handling
 
 Drawers support drag-to-close gestures (mouse and touch). Drag in the direction the drawer was opened from to close it. A **fast swipe** closes the drawer; a **slow drag** closes only if released near the edge. Bottom drawers include a gray handler bar at the top by default.
+
+You can listen to swipe events with **onSwipeStart**, **onSwipe**, and **onSwipeEnd**:
+
+| Callback      | When called                         | Event shape                                                                 |
+| ------------- | ----------------------------------- | --------------------------------------------------------------------------- |
+| **onSwipeStart** | When the user starts dragging       | `{ position, axis }`                                                        |
+| **onSwipe**      | On each move during the gesture     | `{ position, axis, progress, dragOffset, velocity }`                        |
+| **onSwipeEnd**   | When the user releases              | `{ position, axis, progress, dragOffset, velocity, willClose }`             |
+
+- **position** – `"top"` | `"bottom"` | `"left"` | `"right"` (edge the drawer slides from).
+- **axis** – `"x"` | `"y"` (swipe axis).
+- **progress** – 0–1 (0 = fully open, 1 = fully closed).
+- **dragOffset** – Current drag in pixels (positive = toward close).
+- **velocity** – Velocity in close direction (px/ms).
+- **willClose** – (onSwipeEnd only) `true` if the drawer will close, `false` if it will snap back.
 
 ### Scrollable content and `DrawerScrollable`
 

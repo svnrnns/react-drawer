@@ -51,6 +51,9 @@ export function DrawerFrame({ item, disableRubberBandFill }: DrawerFrameProps) {
     drawerId: item.id,
     position: item.position,
     onClose: closeDrawer,
+    onSwipeStart: item.onSwipeStart,
+    onSwipe: item.onSwipe,
+    onSwipeEnd: item.onSwipeEnd,
     enabled: !item.disableGestureClose,
     phase: item.phase,
   });

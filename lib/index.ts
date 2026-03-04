@@ -12,5 +12,9 @@ export type {
   DrawerComponentProps,
   DrawerPhase,
   DrawerPosition,
+  DrawerSwipeAxis,
+  DrawerSwipeStartEvent,
+  DrawerSwipeEvent,
+  DrawerSwipeEndEvent,
 } from "./types.js";
 export type { DrawerScrollableProps } from "./components/DrawerScrollable.js";

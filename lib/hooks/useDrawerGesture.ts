@@ -1,7 +1,12 @@
 import { useState, useRef, useReducer, useCallback, useEffect } from "react";
 import { useDrag } from "@use-gesture/react";
 import type { RefObject } from "react";
-import type { DrawerPosition } from "../types.js";
+import type {
+  DrawerPosition,
+  DrawerSwipeStartEvent,
+  DrawerSwipeEvent,
+  DrawerSwipeEndEvent,
+} from "../types.js";
 import { setGestureClosingId } from "../store.js";
 
 const VELOCITY_THRESHOLD = 0.4; /* px/ms - fast gesture closes */
@@ -29,6 +34,12 @@ interface UseDrawerGestureOptions {
   position: DrawerPosition;
   /** Called when drawer should close. Pass { skipExitAnimation: true } when gesture has already animated. */
   onClose: (options?: { skipExitAnimation?: boolean }) => void;
+  /** Called when the swipe gesture starts */
+  onSwipeStart?: (event: DrawerSwipeStartEvent) => void;
+  /** Called during the swipe gesture (on each move) */
+  onSwipe?: (event: DrawerSwipeEvent) => void;
+  /** Called when the swipe gesture ends */
+  onSwipeEnd?: (event: DrawerSwipeEndEvent) => void;
   enabled: boolean;
   phase: "entering" | "entered" | "exiting";
 }
@@ -133,6 +144,9 @@ export function useDrawerGesture({
   drawerId,
   position,
   onClose,
+  onSwipeStart,
+  onSwipe,
+  onSwipeEnd,
   enabled,
   phase,
 }: UseDrawerGestureOptions): {
@@ -211,6 +225,12 @@ export function useDrawerGesture({
 
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const onSwipeStartRef = useRef(onSwipeStart);
+  onSwipeStartRef.current = onSwipeStart;
+  const onSwipeRef = useRef(onSwipe);
+  onSwipeRef.current = onSwipe;
+  const onSwipeEndRef = useRef(onSwipeEnd);
+  onSwipeEndRef.current = onSwipeEnd;
 
   const closeFromCurrentPosition = useCallback(() => {
     if (isSnapping || gestureClosing !== null) return;
@@ -300,6 +320,8 @@ export function useDrawerGesture({
           }
           session.committedToDrawer = true;
           setIsDragging(true);
+          const startEvent: DrawerSwipeStartEvent = { position, axis };
+          onSwipeStartRef.current?.(startEvent);
         } else {
           /* Not enough movement yet to decide; skip drag update this frame */
           return;
@@ -321,33 +343,54 @@ export function useDrawerGesture({
       const clampedValue = Math.max(0, value); /* used only for close-threshold logic */
 
       setDragOffset(displayValue);
-      /* Force re-render on every move for real-time visual feedback (follows finger/mouse) */
+      const progress = Math.min(1, Math.max(0, value / panelSize));
+      const swipeEvent: DrawerSwipeEvent = {
+        position,
+        axis,
+        progress,
+        dragOffset: displayValue,
+        velocity: vel,
+      };
       if (!last) {
+        onSwipeRef.current?.(swipeEvent);
         forceUpdate();
       }
 
       if (last) {
         setIsDragging(false);
+        const progress = Math.min(1, Math.max(0, value / panelSize));
+        const swipeEndEventBase: DrawerSwipeEvent = {
+          position,
+          axis,
+          progress,
+          dragOffset: displayValue,
+          velocity: vel,
+        };
+        const inCloseDir = isCloseDirection(position, movement, velocity);
+        const threshold = panelSize * THRESHOLD_RATIO;
+        const velocityOk = vel > 0 && vel >= VELOCITY_THRESHOLD;
+        const distanceOk = clampedValue >= threshold;
+        const isTouch = (event as PointerEvent)?.pointerType === "touch";
+        const minMovementOk = !isTouch || clampedValue >= MIN_MOVEMENT_TO_CLOSE_PX;
+        const willClose =
+          inCloseDir && (velocityOk || distanceOk) && minMovementOk;
+        const swipeEndEvent: DrawerSwipeEndEvent = {
+          ...swipeEndEventBase,
+          willClose,
+        };
+        onSwipeEndRef.current?.(swipeEndEvent);
+
         session.startedOnScrollable = false;
         session.yieldToScroll = false;
         session.committedToDrawer = false;
 
         /* Release in opposite direction: snap back with animation - keep filler visible during snap */
-        if (!isCloseDirection(position, movement, velocity)) {
+        if (!inCloseDir) {
           setSnapRubberBandSize(Math.abs(displayValue));
           setIsSnapping(true);
           setDragOffset(0);
           return;
         }
-
-        const threshold = panelSize * THRESHOLD_RATIO;
-        /* Fast close: velocity must be in close direction (vel > 0) and above threshold */
-        const velocityOk = vel > 0 && vel >= VELOCITY_THRESHOLD;
-        /* Slow close: movement must be in close direction and past threshold */
-        const distanceOk = clampedValue >= threshold;
-        /* On touch only: require minimum movement so a small flick doesn't close (touch velocity is noisy). */
-        const isTouch = (event as PointerEvent)?.pointerType === "touch";
-        const minMovementOk = !isTouch || clampedValue >= MIN_MOVEMENT_TO_CLOSE_PX;
 
         if ((velocityOk || distanceOk) && minMovementOk) {
           /* Block backdrop/click close during gesture close to prevent teleport flash */
