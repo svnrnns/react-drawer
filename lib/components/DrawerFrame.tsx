@@ -9,11 +9,11 @@ import {
 import type { DrawerItem } from "../types.js";
 import { createCloseDrawer } from "../api.js";
 import { getGestureClosingId, setOverlaySwipe } from "../store.js";
-import { useFocusTrap } from "../useFocusTrap.js";
-import { useDrawerGesture } from "../useDrawerGesture.js";
-import { useViewportGestureKey } from "../useViewportGestureKey.js";
+import { useFocusTrap } from "../hooks/useFocusTrap.js";
+import { useDrawerGesture } from "../hooks/useDrawerGesture.js";
+import { useViewportGestureKey } from "../hooks/useViewportGestureKey.js";
 import { updatePhase } from "../store.js";
-import { DrawerScrollableContext } from "../drawerScrollableContext.js";
+import { DrawerScrollableContext } from "../contexts/drawerScrollableContext.js";
 
 const ANIMATION_DURATION = 500; /* .5s - matches --drawer-duration */
 

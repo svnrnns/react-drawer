@@ -2,7 +2,7 @@ import { useState, useEffect, useReducer, createElement, useCallback } from "rea
 import { createPortal } from "react-dom";
 import { getDrawer, subscribe, getGestureClosingId, getOverlaySwipe } from "../store.js";
 import { createCloseDrawer } from "../api.js";
-import { useViewportGestureKey } from "../useViewportGestureKey.js";
+import { useViewportGestureKey } from "../hooks/useViewportGestureKey.js";
 import { DrawerOverlay } from "./DrawerOverlay.js";
 import { DrawerFrame } from "./DrawerFrame.js";
 import "../styles/drawer.css";

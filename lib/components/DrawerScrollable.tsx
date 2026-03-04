@@ -4,7 +4,7 @@ import {
   useContext,
   type ComponentPropsWithoutRef,
 } from "react";
-import { DrawerScrollableContext } from "../drawerScrollableContext.js";
+import { DrawerScrollableContext } from "../contexts/drawerScrollableContext.js";
 
 const DEFAULT_CLASS = "drawer-scrollable";
 

@@ -1,8 +1,8 @@
 import { useState, useRef, useReducer, useCallback, useEffect } from "react";
 import { useDrag } from "@use-gesture/react";
 import type { RefObject } from "react";
-import type { DrawerPosition } from "./types.js";
-import { setGestureClosingId } from "./store.js";
+import type { DrawerPosition } from "../types.js";
+import { setGestureClosingId } from "../store.js";
 
 const VELOCITY_THRESHOLD = 0.4; /* px/ms - fast gesture closes */
 const THRESHOLD_RATIO = 0.6; /* fraction of panel size - slow gesture must cross to close */
