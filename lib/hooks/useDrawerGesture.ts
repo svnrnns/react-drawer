@@ -168,6 +168,7 @@ export function useDrawerGesture({
     committedToDrawer: false,
   });
   const lastPanelSizeRef = useRef(0);
+  const hasUsedSwipeOpacityRef = useRef(false);
 
   /* When scrollableEl is set, use container so both handler and scrollable-at-boundary can drive the gesture (scroll is prevented at boundary by touch listeners). */
   const gestureTarget = scrollableEl != null ? containerRef : (handlerRef ?? containerRef);
@@ -411,10 +412,20 @@ export function useDrawerGesture({
     dragOffset < 0 ? Math.abs(dragOffset) : snapRubberBandSize;
 
   const panelSize = lastPanelSizeRef.current || 1;
+  /* Rubber band (dragOffset < 0): keep opacity at 1 (progress 0). Snap back: animate from current to 1 (progress 0). */
+  const rawProgress: number | null =
+    isGestureClosing ? 1 : isSnapping ? 0 : isDragging
+      ? Math.min(1, Math.max(0, dragOffset / panelSize))
+      : null;
   const swipeProgress: number | null =
-    isGestureClosing ? 1 : isDragging && dragOffset > 0 ? Math.min(1, dragOffset / panelSize) : null;
+    rawProgress ?? (hasUsedSwipeOpacityRef.current ? 0 : null);
+  if (swipeProgress !== null) hasUsedSwipeOpacityRef.current = true;
   const swipeTransitionMs: number | null =
-    isGestureClosing && gestureClosing !== null ? gestureClosing.duration : null;
+    isGestureClosing && gestureClosing !== null
+      ? gestureClosing.duration
+      : isSnapping
+        ? SNAP_BACK_DURATION
+        : null;
 
   return {
     bind,
