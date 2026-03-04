@@ -67,6 +67,8 @@ export interface DrawerItem<P = unknown> {
   disableGestureClose?: boolean;
   /** If true, shows the drag handler bar (default true for position bottom, false otherwise) */
   showHandler?: boolean;
+  /** If true, swipe gestures only work on the handler and DrawerScrollable. If false/undefined, gestures work on the whole drawer (handler is decorative). */
+  onlyHandlerGestures?: boolean;
   /** If true, fills the gap when rubber band dragging (default true). Use false to show transparent gap. */
   rubberBandFill?: boolean;
   /** Current animation phase */
@@ -111,6 +113,8 @@ export interface OpenDrawerOptions<T = object, F = object> {
   disableGestureClose?: boolean;
   /** If true, shows the drag handler bar (default true for position bottom, false otherwise) */
   showHandler?: boolean;
+  /** If true, swipe gestures only work on the handler and DrawerScrollable. If false/undefined, gestures work on the whole drawer (handler is decorative). */
+  onlyHandlerGestures?: boolean;
   /** If true, fills the gap when rubber band dragging (default true). Use false to show transparent gap. */
   rubberBandFill?: boolean;
   /** Edge from which the drawer slides. Defaults to "right". */

@@ -28,6 +28,10 @@ export default function RootLayout({ children }) {
 }
 ```
 
+**DrawerRoot props** (optional):
+- **disableOverlay** – If `true`, all drawers render without overlay; background stays interactable.
+- **disableRubberBandFill** – If `true`, disables the rubber band gap fill for all drawers.
+
 2. Import and use `openDrawer` and `closeDrawer` anywhere (no context needed).
 
 ## Usage
@@ -84,17 +88,42 @@ TypeScript infers `props` from your component, so `props: { name: "World" }` is 
 - **onClose** – Callback when the drawer is closed.
 - **disableClickOutside** – If `true`, clicking the overlay does not close.
 - **disableEsc** – If `true`, Escape does not close.
+- **disableOverlay** – If `true`, overlay is not rendered; clicking outside won't close, background is interactable.
 - **disableGestureClose** – If `true`, drag-to-close gesture is disabled.
 - **showHandler** – If `true`, shows the drag handler bar. Default: `true` for `position: "bottom"`, `false` otherwise.
+- **onlyHandlerGestures** – If `true`, swipe gestures only work on the handler and `DrawerScrollable`; the rest of the drawer is non-draggable.
+- **rubberBandFill** – If `true`, fills the gap when rubber band dragging (default). Use `false` to show transparent gap.
 
 ### Gesture handling
 
 Drawers support drag-to-close gestures (mouse and touch). Drag in the direction the drawer was opened from to close it. A **fast swipe** closes the drawer; a **slow drag** closes only if released near the edge. Bottom drawers include a gray handler bar at the top by default.
 
+### Scrollable content and `DrawerScrollable`
+
+When the drawer content has a scrollable area (e.g. a long list), touch gestures can conflict: the inner scroll often wins and the drawer stops reacting. Use the **DrawerScrollable** component for the scrollable container so the drawer can claim the gesture when the user is at the scroll edge in the close direction (e.g. at the top for a bottom drawer, then dragging down closes the drawer).
+
+Import it from the same package and wrap your scrollable content. It accepts standard `div` props; any `className` you pass is merged and takes precedence over the default. The component registers itself with the drawer so that at the scroll boundary, the close gesture works instead of overscroll.
+
+```tsx
+import { openDrawer, DrawerScrollable } from "@svnrnns/react-drawer";
+
+function MyContent({ closeDrawer }: { closeDrawer: () => void }) {
+  return (
+    <div>
+      <p>Header</p>
+      <DrawerScrollable className="my-scroll-area">
+        {/* Long content: when scrolled to top, dragging down closes the drawer */}
+        {items.map((item) => <div key={item.id}>{item.name}</div>)}
+      </DrawerScrollable>
+    </div>
+  );
+}
+```
+
 ### API
 
 - **openDrawer(options)** – Opens a drawer. Returns the drawer **id** (string). Use with `closeDrawer(id)` to close that drawer.
-- **closeDrawer(id?)** – Closes the drawer. If no `id` is passed, closes the current drawer.
+- **closeDrawer(id?, options?)** – Closes the drawer. If no `id` is passed, closes the current drawer. Options: `{ skipExitAnimation?: boolean }` – if `true`, skips the exit animation and clears immediately (used internally when gesture close has already animated).
 
 Each drawer content component receives **closeDrawer** (no arguments): call it to close the drawer.
 
@@ -109,7 +138,7 @@ Override these in your app to style the drawer:
 | Variable                         | Default                               | Description                             |
 | -------------------------------- | ------------------------------------- | --------------------------------------- |
 | `--drawer-bg`                    | `#fff`                                | Drawer panel background                 |
-| `--drawer-border`                | `1px solid transparent`               | Drawer panel border                     |
+| `--drawer-border`                | `none`                                | Drawer panel border                     |
 | `--drawer-padding`               | `1rem`                                | Padding for header and content          |
 | `--drawer-footer-padding`        | `var(--drawer-padding)`               | Padding for the footer                  |
 | `--drawer-gap`                   | `1rem`                                | Gap between header, content, footer     |
@@ -120,7 +149,8 @@ Override these in your app to style the drawer:
 | `--drawer-shadow`                | `0 25px 50px -12px rgb(0 0 0 / 0.25)` | Box shadow                              |
 | `--drawer-overlay-bg`            | `rgba(0, 0, 0, 0.3)`                  | Backdrop color                          |
 | `--drawer-overlay-blur-filter`   | `blur(8px)`                           | Backdrop blur (full filter value)       |
-| `--drawer-duration`              | `200ms`                               | Animation duration                      |
+| `--drawer-duration`              | `.5s`                                 | Animation duration                      |
+| `--drawer-easing`                | `cubic-bezier(.32, .72, 0, 1)`        | Animation easing                        |
 | `--drawer-max-height`            | `min(95vh, 95dvh)`                    | Maximum height for top/bottom drawers   |
 | `--drawer-close-size`            | `1.75rem`                             | Close button width and height           |
 | `--drawer-close-padding`         | `0.25rem`                             | Close button padding                    |

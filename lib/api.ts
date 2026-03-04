@@ -41,6 +41,7 @@ export function openDrawer<T = object, F = object>(
     showHandler:
       options.showHandler ??
       (position === "bottom" ? true : false),
+    onlyHandlerGestures: options.onlyHandlerGestures,
     rubberBandFill: options.rubberBandFill ?? true,
     phase: "entering",
   };

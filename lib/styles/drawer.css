@@ -1,7 +1,7 @@
 /* Custom properties - consumers can override */
 :root {
   --drawer-bg: #fff;
-  --drawer-border: 1px solid transparent;
+  --drawer-border: none;
   --drawer-padding: 1rem;
   --drawer-gap: 1rem;
   --drawer-title-color: #0f172a;
@@ -38,6 +38,10 @@
   -webkit-backdrop-filter: var(--drawer-overlay-blur-filter, blur(4px));
   backdrop-filter: var(--drawer-overlay-blur-filter, blur(4px));
   animation: drawer-overlay-in var(--drawer-duration) var(--drawer-easing) forwards;
+}
+
+.drawer-overlay.drawer-overlay-swipe {
+  animation: none;
 }
 
 .drawer-overlay.drawer-overlay-exit {
@@ -386,6 +390,20 @@
 /* When there is no header/title, content needs top padding */
 .drawer-frame:not(.drawer-frame-has-title) .drawer-content {
   padding-top: var(--drawer-padding);
+}
+
+/* Scrollable container that integrates with drawer gesture (boundary detection). */
+.drawer-scrollable {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Allow native vertical scroll in bottom/top drawers; gesture is only claimed at boundary in close direction via JS. */
+.drawer-frame[data-position="bottom"] .drawer-scrollable,
+.drawer-frame[data-position="top"] .drawer-scrollable {
+  touch-action: pan-y;
 }
 
 .drawer-footer {

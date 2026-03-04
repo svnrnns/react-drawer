@@ -2,10 +2,26 @@ import type { DrawerItem, Listener } from "./types.js";
 
 let current: DrawerItem | null = null;
 let gestureClosingId: string | null = null;
+/** Overlay opacity during swipe: { progress 0-1 (1=fully closed), transitionMs or null } */
+let overlaySwipe: { progress: number; transitionMs: number | null } | null = null;
 const listeners = new Set<Listener>();
 
 function notify() {
   listeners.forEach((fn) => fn());
+}
+
+/** Set overlay swipe progress during gesture (progress 0-1; transitionMs for animated close, or null) */
+export function setOverlaySwipe(progress: number | null, transitionMs?: number | null): void {
+  if (progress == null) {
+    overlaySwipe = null;
+  } else {
+    overlaySwipe = { progress, transitionMs: transitionMs ?? null };
+  }
+  notify();
+}
+
+export function getOverlaySwipe(): { progress: number; transitionMs: number | null } | null {
+  return overlaySwipe;
 }
 
 /** ID of drawer currently closing via gesture - backdrop/click close should be ignored */
@@ -38,6 +54,7 @@ export function setDrawer(item: DrawerItem): void {
 export function clearDrawer(): void {
   current = null;
   gestureClosingId = null;
+  overlaySwipe = null;
   notify();
 }
 

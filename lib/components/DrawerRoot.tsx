@@ -1,6 +1,6 @@
-import { useState, useEffect, createElement, useCallback } from "react";
+import { useState, useEffect, useReducer, createElement, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { getDrawer, subscribe, getGestureClosingId } from "../store.js";
+import { getDrawer, subscribe, getGestureClosingId, getOverlaySwipe } from "../store.js";
 import { createCloseDrawer } from "../api.js";
 import { useViewportGestureKey } from "../useViewportGestureKey.js";
 import { DrawerOverlay } from "./DrawerOverlay.js";
@@ -23,10 +23,15 @@ export function DrawerRoot(props?: DrawerRootProps) {
   const disableOverlayRoot = props?.disableOverlay === true;
   const disableRubberBandFillRoot = props?.disableRubberBandFill === true;
   const [drawer, setDrawer] = useState(getDrawer);
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
+  const overlaySwipe = getOverlaySwipe();
   const viewportGestureKey = useViewportGestureKey();
 
   useEffect(() => {
-    return subscribe(() => setDrawer(getDrawer()));
+    return subscribe(() => {
+      setDrawer(getDrawer());
+      forceUpdate();
+    });
   }, []);
 
   const closeDrawer = useCallback(() => {
@@ -53,6 +58,7 @@ export function DrawerRoot(props?: DrawerRootProps) {
         key: "overlay",
         exiting,
         onBackdropClick,
+        overlaySwipe,
       }),
     createElement(DrawerFrame, {
       key: `${drawer.id}-${viewportGestureKey}`,

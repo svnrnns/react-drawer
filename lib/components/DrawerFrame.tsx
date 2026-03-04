@@ -1,16 +1,19 @@
 import {
   createElement,
   useRef,
+  useState,
   useEffect,
   useCallback,
   type MouseEvent,
 } from "react";
 import type { DrawerItem } from "../types.js";
 import { createCloseDrawer } from "../api.js";
-import { getGestureClosingId } from "../store.js";
+import { getGestureClosingId, setOverlaySwipe } from "../store.js";
 import { useFocusTrap } from "../useFocusTrap.js";
 import { useDrawerGesture } from "../useDrawerGesture.js";
+import { useViewportGestureKey } from "../useViewportGestureKey.js";
 import { updatePhase } from "../store.js";
+import { DrawerScrollableContext } from "../drawerScrollableContext.js";
 
 const ANIMATION_DURATION = 500; /* .5s - matches --drawer-duration */
 
@@ -23,7 +26,13 @@ interface DrawerFrameProps {
 export function DrawerFrame({ item, disableRubberBandFill }: DrawerFrameProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const handlerRef = useRef<HTMLDivElement>(null);
+  const [scrollableEl, setScrollableEl] = useState<HTMLElement | null>(null);
+  const viewportGestureKey = useViewportGestureKey();
   const closeDrawer = useCallback(createCloseDrawer(item.id), [item.id]);
+
+  const registerScrollable = useCallback((el: HTMLElement | null) => {
+    setScrollableEl(el);
+  }, []);
 
   const {
     transformStyle,
@@ -33,9 +42,12 @@ export function DrawerFrame({ item, disableRubberBandFill }: DrawerFrameProps) {
     isGestureClosing,
     onTransitionEnd,
     closeFromCurrentPosition,
+    swipeProgress,
+    swipeTransitionMs,
   } = useDrawerGesture({
     containerRef: frameRef,
-    handlerRef: item.showHandler ? handlerRef : undefined,
+    handlerRef: item.showHandler && item.onlyHandlerGestures ? handlerRef : undefined,
+    scrollableEl,
     drawerId: item.id,
     position: item.position,
     onClose: closeDrawer,
@@ -44,6 +56,10 @@ export function DrawerFrame({ item, disableRubberBandFill }: DrawerFrameProps) {
   });
 
   useFocusTrap(frameRef, true, false);
+
+  useEffect(() => {
+    setOverlaySwipe(swipeProgress, swipeTransitionMs);
+  }, [swipeProgress, swipeTransitionMs]);
 
   useEffect(() => {
     if (!isDragging) return;
@@ -219,7 +235,7 @@ export function DrawerFrame({ item, disableRubberBandFill }: DrawerFrameProps) {
 
   const wrapperStyle: React.CSSProperties = { ...transformStyle };
 
-  return createElement(
+  const layerElement = createElement(
     "div",
     {
       className: "drawer-layer",
@@ -238,6 +254,7 @@ export function DrawerFrame({ item, disableRubberBandFill }: DrawerFrameProps) {
       createElement(
         "div",
         {
+          ...(scrollableEl != null ? { key: viewportGestureKey } : {}),
           ref: frameRef,
           tabIndex: -1,
           role: "dialog",
@@ -265,5 +282,11 @@ export function DrawerFrame({ item, disableRubberBandFill }: DrawerFrameProps) {
         ...frameChildren
       )
     )
+  );
+
+  return createElement(
+    DrawerScrollableContext.Provider,
+    { value: { registerScrollable } },
+    layerElement
   );
 }
