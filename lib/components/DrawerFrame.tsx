@@ -149,12 +149,16 @@ export function DrawerFrame({ item, disableRubberBandFill, closeExtraOffset, dis
       : undefined;
   const rubberBandFillEnabled =
     (item.rubberBandFill ?? true) && !disableRubberBandFill;
+  /* When the frame is the drag target (containerRef), use-gesture requires touch-action: none for correct touch behavior. */
+  const frameIsDragTarget =
+    scrollableEl != null || !(item.showHandler && item.onlyHandlerGestures);
   const frameStyle: React.CSSProperties = {
     ...(widthStyle ?? heightStyle ? { ...widthStyle, ...heightStyle } : {}),
     ...(rubberBandFillEnabled
       ? { ["--drawer-rubberband-size" as string]: `${rubberBandOffset}px` }
       : {}),
     ["--drawer-close-extra-offset" as string]: `${effectiveCloseExtraOffset}px`,
+    ...(frameIsDragTarget ? { touchAction: "none" } : {}),
   };
   const showHandler = item.showHandler ?? false;
   const isVerticalHandler = showHandler && (position === "left" || position === "right");
