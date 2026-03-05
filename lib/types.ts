@@ -114,6 +114,8 @@ export interface DrawerItem<P = unknown> {
   rubberBandFill?: boolean;
   /** Extra distance (px) the drawer travels when closing (100% + this value). Default 0. */
   closeExtraOffset?: number;
+  /** If true, disables body scroll while this drawer is open. */
+  disableBodyScroll?: boolean;
   /** Current animation phase */
   phase: DrawerPhase;
 }
@@ -170,6 +172,8 @@ export interface OpenDrawerOptions<T = object, F = object> {
   position?: DrawerPosition;
   /** Extra distance (px) the drawer travels when closing (100% + this value). Default 0. Overridden by DrawerRoot closeExtraOffset when not set. */
   closeExtraOffset?: number;
+  /** If true, disables body scroll (overflow: hidden on document.body) while this drawer is open. */
+  disableBodyScroll?: boolean;
 }
 
 /** Callback subscribed to store changes (used internally by DrawerRoot) */

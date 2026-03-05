@@ -14,6 +14,8 @@ interface DrawerRootProps {
   disableRubberBandFill?: boolean;
   /** Extra distance (px) all drawers travel when closing (100% + this value). Default 0. Overridden by openDrawer closeExtraOffset per drawer. */
   closeExtraOffset?: number;
+  /** If true, all drawers disable body scroll (overflow: hidden on document.body) while open. Individual drawers can override via openDrawer({ disableBodyScroll: … }). */
+  disableBodyScroll?: boolean;
 }
 
 /**
@@ -25,6 +27,7 @@ export function DrawerRoot(props?: DrawerRootProps) {
   const disableOverlayRoot = props?.disableOverlay === true;
   const disableRubberBandFillRoot = props?.disableRubberBandFill === true;
   const closeExtraOffsetRoot = props?.closeExtraOffset;
+  const disableBodyScrollRoot = props?.disableBodyScroll;
   const [drawer, setDrawer] = useState(getDrawer);
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
   const overlaySwipe = getOverlaySwipe();
@@ -68,6 +71,7 @@ export function DrawerRoot(props?: DrawerRootProps) {
       item: drawer,
       disableRubberBandFill: disableRubberBandFillRoot,
       closeExtraOffset: closeExtraOffsetRoot,
+      disableBodyScroll: disableBodyScrollRoot,
     }),
   ].filter(Boolean);
 

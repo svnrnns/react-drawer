@@ -14,6 +14,7 @@ import { useDrawerGesture } from "../hooks/useDrawerGesture.js";
 import { useViewportGestureKey } from "../hooks/useViewportGestureKey.js";
 import { updatePhase } from "../store.js";
 import { DrawerScrollableContext } from "../contexts/drawerScrollableContext.js";
+import { lockBodyScroll, unlockBodyScroll } from "../bodyScrollLock.js";
 
 const ANIMATION_DURATION = 500; /* .5s - matches --drawer-duration */
 
@@ -23,9 +24,11 @@ interface DrawerFrameProps {
   disableRubberBandFill?: boolean;
   /** From DrawerRoot: extra close distance (px) for all drawers when not set per drawer */
   closeExtraOffset?: number;
+  /** From DrawerRoot: if true, all drawers disable body scroll when open. Per-drawer override via item.disableBodyScroll. */
+  disableBodyScroll?: boolean;
 }
 
-export function DrawerFrame({ item, disableRubberBandFill, closeExtraOffset }: DrawerFrameProps) {
+export function DrawerFrame({ item, disableRubberBandFill, closeExtraOffset, disableBodyScroll: disableBodyScrollRoot }: DrawerFrameProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const handlerRef = useRef<HTMLDivElement>(null);
   const [scrollableEl, setScrollableEl] = useState<HTMLElement | null>(null);
@@ -37,6 +40,8 @@ export function DrawerFrame({ item, disableRubberBandFill, closeExtraOffset }: D
   }, []);
 
   const effectiveCloseExtraOffset = item.closeExtraOffset ?? closeExtraOffset ?? 0;
+
+  const effectiveDisableBodyScroll = item.disableBodyScroll ?? disableBodyScrollRoot ?? false;
 
   const {
     transformStyle,
@@ -77,6 +82,16 @@ export function DrawerFrame({ item, disableRubberBandFill, closeExtraOffset }: D
       document.body.style.userSelect = prev;
     };
   }, [isDragging]);
+
+  useEffect(() => {
+    if (!effectiveDisableBodyScroll) return;
+    const isOpen = item.phase === "entering" || item.phase === "entered";
+    if (isOpen) {
+      lockBodyScroll();
+      return () => unlockBodyScroll();
+    }
+    unlockBodyScroll();
+  }, [effectiveDisableBodyScroll, item.phase]);
 
   useEffect(() => {
     if (item.phase === "entering") {

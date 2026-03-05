@@ -32,6 +32,7 @@ export default function RootLayout({ children }) {
 - **disableOverlay** – If `true`, all drawers render without overlay; background stays interactable.
 - **disableRubberBandFill** – If `true`, disables the rubber band gap fill for all drawers.
 - **closeExtraOffset** – Extra distance in pixels that all drawers travel when closing (100% + this value). Default `0`. Individual drawers can override this via `openDrawer({ closeExtraOffset: … })`.
+- **disableBodyScroll** – If `true`, all drawers disable body scroll (no scrollbar on `document.body`) while open. Individual drawers can override via `openDrawer({ disableBodyScroll: … })`.
 
 2. Import and use `openDrawer` and `closeDrawer` anywhere (no context needed).
 
@@ -98,6 +99,7 @@ TypeScript infers `props` from your component, so `props: { name: "World" }` is 
 - **onlyHandlerGestures** – If `true`, swipe gestures only work on the handler and `DrawerScrollable`; the rest of the drawer is non-draggable.
 - **rubberBandFill** – If `true`, fills the gap when rubber band dragging (default). Use `false` to show transparent gap.
 - **closeExtraOffset** – Extra distance in pixels the drawer travels when closing (100% + this value). Default `0`. When not set, uses the value from `DrawerRoot` if any.
+- **disableBodyScroll** – If `true`, disables body scroll (hides scrollbar on `document.body`) while this drawer is open. When not set, uses the value from `DrawerRoot` if any.
 
 ### Gesture handling
 

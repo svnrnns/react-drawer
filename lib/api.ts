@@ -47,6 +47,7 @@ export function openDrawer<T = object, F = object>(
     onlyHandlerGestures: options.onlyHandlerGestures,
     rubberBandFill: options.rubberBandFill ?? true,
     closeExtraOffset: options.closeExtraOffset,
+    disableBodyScroll: options.disableBodyScroll,
     phase: "entering",
   };
   setDrawer(item);
