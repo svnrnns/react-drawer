@@ -21,9 +21,11 @@ interface DrawerFrameProps {
   item: DrawerItem;
   /** Override from DrawerRoot: disables rubber band fill for all drawers */
   disableRubberBandFill?: boolean;
+  /** From DrawerRoot: extra close distance (px) for all drawers when not set per drawer */
+  closeExtraOffset?: number;
 }
 
-export function DrawerFrame({ item, disableRubberBandFill }: DrawerFrameProps) {
+export function DrawerFrame({ item, disableRubberBandFill, closeExtraOffset }: DrawerFrameProps) {
   const frameRef = useRef<HTMLDivElement>(null);
   const handlerRef = useRef<HTMLDivElement>(null);
   const [scrollableEl, setScrollableEl] = useState<HTMLElement | null>(null);
@@ -33,6 +35,8 @@ export function DrawerFrame({ item, disableRubberBandFill }: DrawerFrameProps) {
   const registerScrollable = useCallback((el: HTMLElement | null) => {
     setScrollableEl(el);
   }, []);
+
+  const effectiveCloseExtraOffset = item.closeExtraOffset ?? closeExtraOffset ?? 0;
 
   const {
     transformStyle,
@@ -56,6 +60,7 @@ export function DrawerFrame({ item, disableRubberBandFill }: DrawerFrameProps) {
     onSwipeEnd: item.onSwipeEnd,
     enabled: !item.disableGestureClose,
     phase: item.phase,
+    closeExtraOffset: effectiveCloseExtraOffset,
   });
 
   useFocusTrap(frameRef, true, false);
@@ -134,6 +139,7 @@ export function DrawerFrame({ item, disableRubberBandFill }: DrawerFrameProps) {
     ...(rubberBandFillEnabled
       ? { ["--drawer-rubberband-size" as string]: `${rubberBandOffset}px` }
       : {}),
+    ["--drawer-close-extra-offset" as string]: `${effectiveCloseExtraOffset}px`,
   };
   const showHandler = item.showHandler ?? false;
   const isVerticalHandler = showHandler && (position === "left" || position === "right");

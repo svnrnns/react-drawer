@@ -27,6 +27,7 @@
   --drawer-handler-height: 4px;
   --drawer-handler-border-radius: 2px;
   --drawer-handler-touch-area: 16px;
+  --drawer-close-extra-offset: 0;
 }
 
 /* Overlay */
@@ -255,7 +256,7 @@
   }
 
   to {
-    transform: translateX(100%);
+    transform: translateX(calc(100% + var(--drawer-close-extra-offset, 0)));
   }
 }
 
@@ -275,7 +276,7 @@
   }
 
   to {
-    transform: translateX(-100%);
+    transform: translateX(calc(-100% - var(--drawer-close-extra-offset, 0)));
   }
 }
 
@@ -295,7 +296,7 @@
   }
 
   to {
-    transform: translateY(-100%);
+    transform: translateY(calc(-100% - var(--drawer-close-extra-offset, 0)));
   }
 }
 
@@ -315,7 +316,7 @@
   }
 
   to {
-    transform: translateY(100%);
+    transform: translateY(calc(100% + var(--drawer-close-extra-offset, 0)));
   }
 }
 

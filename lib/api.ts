@@ -46,6 +46,7 @@ export function openDrawer<T = object, F = object>(
       (position === "bottom" ? true : false),
     onlyHandlerGestures: options.onlyHandlerGestures,
     rubberBandFill: options.rubberBandFill ?? true,
+    closeExtraOffset: options.closeExtraOffset,
     phase: "entering",
   };
   setDrawer(item);

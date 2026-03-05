@@ -42,6 +42,8 @@ interface UseDrawerGestureOptions {
   onSwipeEnd?: (event: DrawerSwipeEndEvent) => void;
   enabled: boolean;
   phase: "entering" | "entered" | "exiting";
+  /** Extra distance (px) to add to close animation target (100% + this). Default 0. */
+  closeExtraOffset?: number;
 }
 
 function getAxis(position: DrawerPosition): "x" | "y" {
@@ -149,6 +151,7 @@ export function useDrawerGesture({
   onSwipeEnd,
   enabled,
   phase,
+  closeExtraOffset = 0,
 }: UseDrawerGestureOptions): {
   bind: ReturnType<typeof useDrag>;
   transformStyle: React.CSSProperties;
@@ -242,10 +245,10 @@ export function useDrawerGesture({
     setGestureClosingId(drawerId);
     setIsDragging(false);
     setGestureClosing({
-      targetValue: panelSize,
+      targetValue: panelSize + closeExtraOffset,
       duration: ESC_DURING_DRAG_CLOSE_DURATION,
     });
-  }, [axis, containerRef, drawerId, isSnapping, gestureClosing]);
+  }, [axis, containerRef, drawerId, closeExtraOffset, isSnapping, gestureClosing]);
 
   const onTransitionEnd = useCallback(
     (e: React.TransitionEvent) => {
@@ -396,13 +399,13 @@ export function useDrawerGesture({
           /* Block backdrop/click close during gesture close to prevent teleport flash */
           setGestureClosingId(drawerId);
           /* Animate from current position to closed; duration proportional to velocity */
-          const remainingDist = Math.max(0, panelSize - clampedValue);
+          const remainingDist = Math.max(0, panelSize + closeExtraOffset - clampedValue);
           const rawDuration = vel > 0 ? remainingDist / vel : MAX_CLOSE_DURATION;
           const duration = Math.min(
             MAX_CLOSE_DURATION,
             Math.max(MIN_CLOSE_DURATION, rawDuration)
           );
-          setGestureClosing({ targetValue: panelSize, duration });
+          setGestureClosing({ targetValue: panelSize + closeExtraOffset, duration });
         } else {
           /* Snap back from current position - isSnapping cleared by onTransitionEnd */
           setIsSnapping(true);

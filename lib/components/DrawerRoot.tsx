@@ -12,6 +12,8 @@ interface DrawerRootProps {
   disableOverlay?: boolean;
   /** If true, disables rubber band fill for all drawers (no gap filler when rubber band dragging) */
   disableRubberBandFill?: boolean;
+  /** Extra distance (px) all drawers travel when closing (100% + this value). Default 0. Overridden by openDrawer closeExtraOffset per drawer. */
+  closeExtraOffset?: number;
 }
 
 /**
@@ -22,6 +24,7 @@ interface DrawerRootProps {
 export function DrawerRoot(props?: DrawerRootProps) {
   const disableOverlayRoot = props?.disableOverlay === true;
   const disableRubberBandFillRoot = props?.disableRubberBandFill === true;
+  const closeExtraOffsetRoot = props?.closeExtraOffset;
   const [drawer, setDrawer] = useState(getDrawer);
   const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
   const overlaySwipe = getOverlaySwipe();
@@ -64,6 +67,7 @@ export function DrawerRoot(props?: DrawerRootProps) {
       key: `${drawer.id}-${viewportGestureKey}`,
       item: drawer,
       disableRubberBandFill: disableRubberBandFillRoot,
+      closeExtraOffset: closeExtraOffsetRoot,
     }),
   ].filter(Boolean);
 

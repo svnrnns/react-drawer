@@ -112,6 +112,8 @@ export interface DrawerItem<P = unknown> {
   onlyHandlerGestures?: boolean;
   /** If true, fills the gap when rubber band dragging (default true). Use false to show transparent gap. */
   rubberBandFill?: boolean;
+  /** Extra distance (px) the drawer travels when closing (100% + this value). Default 0. */
+  closeExtraOffset?: number;
   /** Current animation phase */
   phase: DrawerPhase;
 }
@@ -166,6 +168,8 @@ export interface OpenDrawerOptions<T = object, F = object> {
   rubberBandFill?: boolean;
   /** Edge from which the drawer slides. Defaults to "right". */
   position?: DrawerPosition;
+  /** Extra distance (px) the drawer travels when closing (100% + this value). Default 0. Overridden by DrawerRoot closeExtraOffset when not set. */
+  closeExtraOffset?: number;
 }
 
 /** Callback subscribed to store changes (used internally by DrawerRoot) */
