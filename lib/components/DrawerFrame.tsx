@@ -149,7 +149,7 @@ export function DrawerFrame({ item, disableRubberBandFill, closeExtraOffset, dis
       : undefined;
   const rubberBandFillEnabled =
     (item.rubberBandFill ?? true) && !disableRubberBandFill;
-  /* When the frame is the drag target (containerRef), use-gesture requires touch-action: none for correct touch behavior. */
+  /* When the frame is the drag target (containerRef), touch-action: none so pointer gestures work correctly. */
   const frameIsDragTarget =
     scrollableEl != null || !(item.showHandler && item.onlyHandlerGestures);
   const frameStyle: React.CSSProperties = {

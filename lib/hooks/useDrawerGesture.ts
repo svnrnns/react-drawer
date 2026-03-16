@@ -1,5 +1,4 @@
 import { useState, useRef, useReducer, useCallback, useEffect } from "react";
-import { useDrag } from "@use-gesture/react";
 import type { RefObject } from "react";
 import type {
   DrawerPosition,
@@ -9,7 +8,7 @@ import type {
 } from "../types.js";
 import { setGestureClosingId } from "../store.js";
 
-const VELOCITY_THRESHOLD = 0.4; /* px/ms - fast gesture closes */
+const VELOCITY_THRESHOLD = 0.25; /* px/ms - fast gesture closes (lower = less velocity needed) */
 const THRESHOLD_RATIO = 0.6; /* fraction of panel size - slow gesture must cross to close */
 const SNAP_BACK_DURATION = 300;
 /** Rubber band: resistance when dragging opposite to close. Stiffness = max stretch (px); higher = more stretch. */
@@ -23,6 +22,7 @@ const MIN_MOVEMENT_TO_CLOSE_PX = 24;
 const SCROLL_EDGE_TOLERANCE = 2;
 /** Min movement (px) before we decide scroll vs drawer when touch started on scrollable. */
 const MIN_MOVEMENT_TO_DECIDE_PX = 3;
+const MIN_DT_MS = 8; /* min delta time for velocity to avoid division by zero */
 
 interface UseDrawerGestureOptions {
   containerRef: RefObject<HTMLElement | null>;
@@ -44,6 +44,10 @@ interface UseDrawerGestureOptions {
   phase: "entering" | "entered" | "exiting";
   /** Extra distance (px) to add to close animation target (100% + this). Default 0. */
   closeExtraOffset?: number;
+}
+
+export interface UseDrawerGestureBind {
+  (): Record<string, never>;
 }
 
 function getAxis(position: DrawerPosition): "x" | "y" {
@@ -153,7 +157,7 @@ export function useDrawerGesture({
   phase,
   closeExtraOffset = 0,
 }: UseDrawerGestureOptions): {
-  bind: ReturnType<typeof useDrag>;
+  bind: UseDrawerGestureBind;
   transformStyle: React.CSSProperties;
   /** Rubber band offset in px when dragging opposite to close. 0 when not rubber banding. */
   rubberBandOffset: number;
@@ -235,6 +239,20 @@ export function useDrawerGesture({
   const onSwipeEndRef = useRef(onSwipeEnd);
   onSwipeEndRef.current = onSwipeEnd;
 
+  const gestureEnabledRef = useRef(gestureEnabled);
+  gestureEnabledRef.current = gestureEnabled;
+  const gestureClosingRef = useRef(gestureClosing);
+  gestureClosingRef.current = gestureClosing;
+  const isSnappingRef = useRef(isSnapping);
+  isSnappingRef.current = isSnapping;
+
+  /* Track pointer for velocity: start and last move */
+  const startXRef = useRef(0);
+  const startYRef = useRef(0);
+  const lastMoveXRef = useRef(0);
+  const lastMoveYRef = useRef(0);
+  const lastMoveTimeRef = useRef(0);
+
   const closeFromCurrentPosition = useCallback(() => {
     if (isSnapping || gestureClosing !== null) return;
     const el = containerRef.current;
@@ -264,41 +282,77 @@ export function useDrawerGesture({
     [gestureClosing, isSnapping]
   );
 
-  const bind = useDrag(
-    ({ movement, velocity, last, first, event }) => {
-      if (!gestureEnabled) return;
-      /* Block drag while any animation is running */
-      if (isSnapping || gestureClosing !== null) return;
+  /* Attach pointer listeners: use document for pointerdown so we don't depend on
+   * ref being set when effect runs. On pointerdown we check if target is inside
+   * gestureTarget.current; then we add move/up to document. */
+  useEffect(() => {
+    if (!gestureEnabled) return;
 
-      const session = sessionRef.current;
-      const target = (event?.target as Node) ?? null;
+    let pointerId: number | null = null;
+    let onPointerMove: (e: PointerEvent) => void = () => {};
+    let onPointerUp: (e: PointerEvent) => void = () => {};
 
-      if (first) {
-        session.startedOnScrollable =
-          scrollableEl != null && scrollableEl.contains(target);
-        session.yieldToScroll = false;
-        session.committedToDrawer = false;
-        /* Don't set isDragging yet: wait for first move to decide scroll vs drawer */
+    const cleanupMoveUp = () => {
+      document.removeEventListener("pointermove", onPointerMove, { capture: true });
+      document.removeEventListener("pointerup", onPointerUp, { capture: true });
+      document.removeEventListener("pointerleave", onPointerUp, { capture: true });
+      document.removeEventListener("pointercancel", onPointerUp, { capture: true });
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      if (gestureClosingRef.current !== null) return;
+      if (pointerId !== null) return;
+
+      const el = gestureTarget?.current;
+      if (!el || !el.contains(e.target as Node)) return;
+
+      /* Same as bottom-sheets: allow new gesture during snap by clearing snap state (no cooldown) */
+      if (isSnappingRef.current) {
+        setSnapRubberBandSize(0);
+        setIsSnapping(false);
       }
 
-      /* If we already yielded to scroll this session, do nothing (let native scroll handle it) */
-      if (session.yieldToScroll) {
-        if (last) {
-          session.startedOnScrollable = false;
-          session.yieldToScroll = false;
-          session.committedToDrawer = false;
-        }
-        return;
+      pointerId = e.pointerId;
+      startXRef.current = e.clientX;
+      startYRef.current = e.clientY;
+      lastMoveXRef.current = e.clientX;
+      lastMoveYRef.current = e.clientY;
+      lastMoveTimeRef.current = e.timeStamp;
+
+      sessionRef.current.startedOnScrollable =
+        scrollableEl != null && scrollableEl.contains(e.target as Node);
+      sessionRef.current.yieldToScroll = false;
+      sessionRef.current.committedToDrawer = false;
+
+      /* Vertical drawer with scrollable: don't preventDefault so the scrollable can receive touch and scroll natively */
+      const allowScrollNative = scrollableEl != null && axis === "y";
+      if (!allowScrollNative) {
+        e.preventDefault();
       }
 
-      /* First move after touch: only activate drawer when at scroll boundary in close direction (bottom=top of scroll, top=bottom of scroll); otherwise yield to scroll */
-      if (!session.committedToDrawer) {
-        const movementSize =
-          axis === "y"
-            ? Math.abs(movement[1])
-            : Math.abs(movement[0]);
-        const hasMeaningfulMovement = movementSize >= MIN_MOVEMENT_TO_DECIDE_PX;
-        if (hasMeaningfulMovement) {
+      onPointerMove = (moveEvent: PointerEvent) => {
+        if (moveEvent.pointerId !== pointerId) return;
+        if (gestureClosingRef.current !== null) return;
+
+        const session = sessionRef.current;
+        const movement: [number, number] = [
+          moveEvent.clientX - startXRef.current,
+          moveEvent.clientY - startYRef.current,
+        ];
+
+        if (session.yieldToScroll) return;
+
+        const dt = moveEvent.timeStamp - lastMoveTimeRef.current;
+        const velX = dt >= MIN_DT_MS ? (moveEvent.clientX - lastMoveXRef.current) / dt : 0;
+        const velY = dt >= MIN_DT_MS ? (moveEvent.clientY - lastMoveYRef.current) / dt : 0;
+        const velocity: [number, number] = [velX, velY];
+
+        if (!session.committedToDrawer) {
+          const movementSize =
+            axis === "y" ? Math.abs(movement[1]) : Math.abs(movement[0]);
+          const hasMeaningfulMovement = movementSize >= MIN_MOVEMENT_TO_DECIDE_PX;
+          if (!hasMeaningfulMovement) return;
+
           const inCloseDirection = isCloseDirection(position, movement, velocity);
           const atBoundaryForClose =
             scrollableEl != null &&
@@ -308,59 +362,97 @@ export function useDrawerGesture({
               movement[0],
               movement[1]
             );
-          /* Yield to scroll when: not in close direction, or (on scrollable and not at the correct edge for closing) */
           if (
             session.startedOnScrollable &&
             (!inCloseDirection || !atBoundaryForClose)
           ) {
             session.yieldToScroll = true;
-            if (last) {
-              session.startedOnScrollable = false;
-              session.yieldToScroll = false;
-              session.committedToDrawer = false;
-            }
             return;
           }
           session.committedToDrawer = true;
           setIsDragging(true);
           const startEvent: DrawerSwipeStartEvent = { position, axis };
           onSwipeStartRef.current?.(startEvent);
-        } else {
-          /* Not enough movement yet to decide; skip drag update this frame */
-          return;
         }
-      }
 
-      const { value, vel } = getRelevantValue(position, movement, velocity);
+        if (!sessionRef.current.committedToDrawer) return;
 
-      const el = containerRef.current;
-      const panelSize =
-        axis === "y"
-          ? el?.offsetHeight ?? 300
-          : el?.offsetWidth ?? 300;
-      lastPanelSizeRef.current = panelSize;
-      const stiffness = Math.max(30, panelSize * RUBBERBAND_STIFFNESS_RATIO);
+        moveEvent.preventDefault();
 
-      /* Close direction (positive): direct mapping. Opposite direction (negative): rubber band. */
-      const displayValue = applyRubberBand(value, stiffness);
-      const clampedValue = Math.max(0, value); /* used only for close-threshold logic */
+        const { value, vel } = getRelevantValue(position, movement, velocity);
 
-      setDragOffset(displayValue);
-      const progress = Math.min(1, Math.max(0, value / panelSize));
-      const swipeEvent: DrawerSwipeEvent = {
-        position,
-        axis,
-        progress,
-        dragOffset: displayValue,
-        velocity: vel,
-      };
-      if (!last) {
+        const containerEl = containerRef.current;
+        const panelSize =
+          axis === "y"
+            ? containerEl?.offsetHeight ?? 300
+            : containerEl?.offsetWidth ?? 300;
+        lastPanelSizeRef.current = panelSize;
+        const stiffness = Math.max(30, panelSize * RUBBERBAND_STIFFNESS_RATIO);
+
+        const displayValue = applyRubberBand(value, stiffness);
+
+        setDragOffset(displayValue);
+        const progress = Math.min(1, Math.max(0, value / panelSize));
+        const swipeEvent: DrawerSwipeEvent = {
+          position,
+          axis,
+          progress,
+          dragOffset: displayValue,
+          velocity: vel,
+        };
         onSwipeRef.current?.(swipeEvent);
         forceUpdate();
-      }
 
-      if (last) {
+        lastMoveXRef.current = moveEvent.clientX;
+        lastMoveYRef.current = moveEvent.clientY;
+        lastMoveTimeRef.current = moveEvent.timeStamp;
+      };
+
+      onPointerUp = (upEvent: PointerEvent) => {
+        if (upEvent.pointerId !== pointerId) return;
+
+        cleanupMoveUp();
+        pointerId = null;
         setIsDragging(false);
+
+        const session = sessionRef.current;
+        const movement: [number, number] = [
+          upEvent.clientX - startXRef.current,
+          upEvent.clientY - startYRef.current,
+        ];
+        const dt = upEvent.timeStamp - lastMoveTimeRef.current;
+        const velX = dt >= MIN_DT_MS ? (upEvent.clientX - lastMoveXRef.current) / dt : 0;
+        const velY = dt >= MIN_DT_MS ? (upEvent.clientY - lastMoveYRef.current) / dt : 0;
+        const velocity: [number, number] = [velX, velY];
+
+        const eventType = upEvent.type;
+        const isCancelEvent =
+          eventType === "pointercancel" || eventType === "pointerout";
+        if (isCancelEvent) {
+          setDragOffset(0);
+          sessionRef.current.startedOnScrollable = false;
+          sessionRef.current.yieldToScroll = false;
+          sessionRef.current.committedToDrawer = false;
+          return;
+        }
+
+        if (!session.committedToDrawer) {
+          sessionRef.current.startedOnScrollable = false;
+          sessionRef.current.yieldToScroll = false;
+          sessionRef.current.committedToDrawer = false;
+          return;
+        }
+
+        const { value, vel } = getRelevantValue(position, movement, velocity);
+        const containerEl = containerRef.current;
+        const panelSize =
+          axis === "y"
+            ? containerEl?.offsetHeight ?? 300
+            : containerEl?.offsetWidth ?? 300;
+        const stiffness = Math.max(30, panelSize * RUBBERBAND_STIFFNESS_RATIO);
+        const displayValue = applyRubberBand(value, stiffness);
+        const clampedValue = Math.max(0, value);
+
         const progress = Math.min(1, Math.max(0, value / panelSize));
         const swipeEndEventBase: DrawerSwipeEvent = {
           position,
@@ -373,7 +465,9 @@ export function useDrawerGesture({
         const threshold = panelSize * THRESHOLD_RATIO;
         const velocityOk = vel > 0 && vel >= VELOCITY_THRESHOLD;
         const distanceOk = clampedValue >= threshold;
-        const isTouch = (event as PointerEvent)?.pointerType === "touch";
+        const isTouch =
+          typeof window !== "undefined" &&
+          (window.matchMedia?.("(pointer: coarse)")?.matches ?? false);
         const minMovementOk = !isTouch || clampedValue >= MIN_MOVEMENT_TO_CLOSE_PX;
         const willClose =
           inCloseDir && (velocityOk || distanceOk) && minMovementOk;
@@ -383,11 +477,10 @@ export function useDrawerGesture({
         };
         onSwipeEndRef.current?.(swipeEndEvent);
 
-        session.startedOnScrollable = false;
-        session.yieldToScroll = false;
-        session.committedToDrawer = false;
+        sessionRef.current.startedOnScrollable = false;
+        sessionRef.current.yieldToScroll = false;
+        sessionRef.current.committedToDrawer = false;
 
-        /* Release in opposite direction: snap back with animation - keep filler visible during snap */
         if (!inCloseDir) {
           setSnapRubberBandSize(Math.abs(displayValue));
           setIsSnapping(true);
@@ -396,9 +489,7 @@ export function useDrawerGesture({
         }
 
         if ((velocityOk || distanceOk) && minMovementOk) {
-          /* Block backdrop/click close during gesture close to prevent teleport flash */
           setGestureClosingId(drawerId);
-          /* Animate from current position to closed; duration proportional to velocity */
           const remainingDist = Math.max(0, panelSize + closeExtraOffset - clampedValue);
           const rawDuration = vel > 0 ? remainingDist / vel : MAX_CLOSE_DURATION;
           const duration = Math.min(
@@ -407,24 +498,35 @@ export function useDrawerGesture({
           );
           setGestureClosing({ targetValue: panelSize + closeExtraOffset, duration });
         } else {
-          /* Snap back from current position - isSnapping cleared by onTransitionEnd */
           setIsSnapping(true);
           setDragOffset(0);
         }
-      }
-    },
-    {
-      axis,
-      pointer: { touch: true },
-      target: gestureTarget,
-      enabled: gestureEnabled,
-      from: () => [0, 0],
-      /* Vertical drawer with scrollable: don't capture pointer so the scrollable can receive touch and scroll natively; we only claim the gesture when at boundary in close direction (touch listeners preventDefault there). */
-      ...(scrollableEl != null && axis === "y" ? { capture: false } : {}),
-      /* Prevent scroll immediately on vertical drawers (without scrollable) so the gesture gets touch from the start (smooth follow on mobile). */
-      preventScroll: scrollableEl == null && axis === "y" ? 0 : undefined,
-    }
-  );
+      };
+
+      document.addEventListener("pointermove", onPointerMove, { capture: true, passive: false });
+      document.addEventListener("pointerup", onPointerUp, { capture: true, passive: false });
+      document.addEventListener("pointerleave", onPointerUp, { capture: true, passive: false });
+      document.addEventListener("pointercancel", onPointerUp, { capture: true, passive: false });
+    };
+
+    document.addEventListener("pointerdown", onPointerDown, { capture: true, passive: false });
+
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, { capture: true });
+      cleanupMoveUp();
+    };
+  }, [
+    gestureTarget,
+    gestureEnabled,
+    scrollableEl,
+    position,
+    axis,
+    containerRef,
+    closeExtraOffset,
+    drawerId,
+  ]);
+
+  const bind: UseDrawerGestureBind = useCallback(() => ({}), []);
 
   const isGestureClosing = gestureClosing !== null;
   const hasTransform =
@@ -445,12 +547,12 @@ export function useDrawerGesture({
 
   const transformStyle: React.CSSProperties = hasTransform
     ? {
-      transform:
-        axis === "y"
-          ? `translateY(${val}px)`
-          : `translateX(${val}px)`,
-      transition,
-    }
+        transform:
+          axis === "y"
+            ? `translateY(${val}px)`
+            : `translateX(${val}px)`,
+        transition,
+      }
     : {};
 
   /** Rubber band offset in px when dragging opposite to close (gap to fill). 0 when not rubber banding. */
