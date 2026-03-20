@@ -8,7 +8,7 @@ import type {
 } from "../types.js";
 import { setGestureClosingId } from "../store.js";
 
-const VELOCITY_THRESHOLD = 0.25; /* px/ms - fast gesture closes (lower = less velocity needed) */
+const VELOCITY_THRESHOLD = 0.4; /* px/ms - fast gesture closes (lower = less velocity needed) */
 const THRESHOLD_RATIO = 0.6; /* fraction of panel size - slow gesture must cross to close */
 const SNAP_BACK_DURATION = 300;
 /** Rubber band: resistance when dragging opposite to close. Stiffness = max stretch (px); higher = more stretch. */
@@ -289,8 +289,8 @@ export function useDrawerGesture({
     if (!gestureEnabled) return;
 
     let pointerId: number | null = null;
-    let onPointerMove: (e: PointerEvent) => void = () => {};
-    let onPointerUp: (e: PointerEvent) => void = () => {};
+    let onPointerMove: (e: PointerEvent) => void = () => { };
+    let onPointerUp: (e: PointerEvent) => void = () => { };
 
     const cleanupMoveUp = () => {
       document.removeEventListener("pointermove", onPointerMove, { capture: true });
@@ -547,12 +547,12 @@ export function useDrawerGesture({
 
   const transformStyle: React.CSSProperties = hasTransform
     ? {
-        transform:
-          axis === "y"
-            ? `translateY(${val}px)`
-            : `translateX(${val}px)`,
-        transition,
-      }
+      transform:
+        axis === "y"
+          ? `translateY(${val}px)`
+          : `translateX(${val}px)`,
+      transition,
+    }
     : {};
 
   /** Rubber band offset in px when dragging opposite to close (gap to fill). 0 when not rubber banding. */
