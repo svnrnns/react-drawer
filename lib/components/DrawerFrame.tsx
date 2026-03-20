@@ -44,6 +44,7 @@ export function DrawerFrame({ item, disableRubberBandFill, closeExtraOffset, dis
   const effectiveDisableBodyScroll = item.disableBodyScroll ?? disableBodyScrollRoot ?? false;
 
   const {
+    gestureHandlers,
     transformStyle,
     rubberBandOffset,
     isDragging,
@@ -162,6 +163,11 @@ export function DrawerFrame({ item, disableRubberBandFill, closeExtraOffset, dis
   };
   const showHandler = item.showHandler ?? false;
   const isVerticalHandler = showHandler && (position === "left" || position === "right");
+  /** BottomSheet-style: full-panel gestures on transform wrapper; handler-only mode uses the handler node. */
+  const attachGesturesToHandlerOnly =
+    item.showHandler &&
+    item.onlyHandlerGestures &&
+    scrollableEl == null;
 
   const handlerElement =
     showHandler &&
@@ -173,6 +179,7 @@ export function DrawerFrame({ item, disableRubberBandFill, closeExtraOffset, dis
         "data-position": position,
         role: "button",
         "aria-label": "Drag to close",
+        ...(attachGesturesToHandlerOnly ? gestureHandlers : {}),
       },
       createElement("div", { className: "drawer-handler" })
     );
@@ -278,6 +285,7 @@ export function DrawerFrame({ item, disableRubberBandFill, closeExtraOffset, dis
         "data-position": position,
         style: Object.keys(wrapperStyle).length > 0 ? wrapperStyle : undefined,
         onTransitionEnd,
+        ...(attachGesturesToHandlerOnly ? {} : gestureHandlers),
       },
       createElement(
         "div",
